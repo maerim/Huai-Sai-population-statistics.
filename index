@@ -8,9 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
-        .stats-card { transition: all 0.3s ease; }
-        .stats-card:hover { transform: translateY(-2px); }
-        .village-item.active { border-left: 4px solid #2563eb; background-color: #eff6ff; }
+        .village-item.active { border-left: 4px solid #2563eb; background-color: #eff6ff; color: #1e40af; }
     </style>
 </head>
 <body class="text-slate-800">
@@ -40,20 +38,16 @@
                 </h2>
             </div>
             <nav id="villageList" class="divide-y divide-slate-100">
-                <!-- Items will be injected by JS -->
+                <!-- รายชื่อหมู่บ้านจะถูกใส่ที่นี่ด้วย JavaScript -->
             </nav>
         </aside>
 
         <!-- Main Content: Detailed Stats -->
         <section class="lg:col-span-8">
             <div id="detailContainer" class="space-y-6">
-                <!-- Selection prompt if nothing selected -->
+                <!-- ข้อมูลรายละเอียดจะแสดงผลที่นี่ -->
                 <div class="bg-white p-12 rounded-2xl shadow-sm border border-slate-200 text-center">
-                    <div class="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-slate-700">กรุณาเลือกหมู่บ้าน</h3>
-                    <p class="text-slate-500">เพื่อดูข้อมูลสถิติประชากรแยกตามเพศและสัญชาติ</p>
+                    <p class="text-slate-500 italic">กำลังโหลดข้อมูล...</p>
                 </div>
             </div>
         </section>
@@ -61,11 +55,11 @@
     </main>
 
     <footer class="text-center p-8 text-slate-400 text-sm">
-        &copy; 2026 ระบบสถิติประชากรตำบลห้วยทราย ข้อมูลจำลองเพื่อการนำเสนอ
+        &copy; 2026 ระบบสถิติประชากรตำบลห้วยทราย
     </footer>
 
     <script>
-        // Data derived from the image provided
+        // ข้อมูลสถิติจากรูปภาพ
         const populationData = [
             { 
                 id: 0, 
@@ -119,102 +113,110 @@
 
         function renderVillageList() {
             const list = document.getElementById('villageList');
+            if (!list) return;
+            
             list.innerHTML = populationData.map(v => `
-                <button onclick="showDetail(${v.id})" class="village-item w-full text-left p-4 hover:bg-slate-50 flex justify-between items-center transition-colors">
+                <button onclick="showDetail(${v.id})" class="village-item w-full text-left p-4 hover:bg-slate-50 flex justify-between items-center transition-all group">
                     <span class="font-medium ${v.id === 0 ? 'text-blue-700 font-bold' : 'text-slate-700'}">${v.name}</span>
-                    <span class="text-sm bg-slate-100 px-2 py-1 rounded-md text-slate-500">${v.total.toLocaleString()} คน</span>
+                    <span class="text-sm bg-slate-100 px-2 py-1 rounded text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">${v.total.toLocaleString()} คน</span>
                 </button>
             `).join('');
         }
 
-        function showDetail(id) {
+        window.showDetail = function(id) {
             const data = populationData.find(v => v.id === id);
             const container = document.getElementById('detailContainer');
+            if (!container || !data) return;
             
-            // Highlight selected in list
+            // ปรับสถานะ Active ในเมนู
             document.querySelectorAll('.village-item').forEach((el, index) => {
-                el.classList.toggle('active', index === id);
+                if (index === id) el.classList.add('active');
+                else el.classList.remove('active');
             });
 
             const maleRatio = Math.round((data.combined.m / data.total) * 100);
             const femaleRatio = 100 - maleRatio;
 
             container.innerHTML = `
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 animate-in fade-in duration-500">
-                    <div class="flex justify-between items-start mb-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
                         <div>
                             <h2 class="text-2xl font-bold text-slate-800">${data.name}</h2>
-                            <p class="text-slate-500">ข้อมูลสถิติแบบละเอียด</p>
+                            <p class="text-slate-500">สถิติประชากรแยกตามเพศและสัญชาติ</p>
                         </div>
-                        <div class="bg-blue-600 text-white px-4 py-2 rounded-xl text-center">
-                            <div class="text-xs uppercase opacity-75">รวม</div>
-                            <div class="text-xl font-bold">${data.total.toLocaleString()}</div>
+                        <div class="bg-blue-600 text-white px-5 py-2 rounded-xl text-center shadow-md shadow-blue-200">
+                            <div class="text-xs uppercase opacity-80 font-bold">รวมทั้งสิ้น</div>
+                            <div class="text-2xl font-bold">${data.total.toLocaleString()}</div>
                         </div>
                     </div>
 
-                    <!-- Gender Split Row -->
+                    <!-- สรุปแยกเพศ -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                        <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-center">
-                            <div class="bg-blue-500 text-white p-3 rounded-lg mr-4">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                            </div>
-                            <div>
-                                <p class="text-blue-600 text-sm font-semibold">ชาย</p>
-                                <p class="text-2xl font-bold text-blue-900">${data.combined.m.toLocaleString()} <span class="text-sm font-normal opacity-60">คน</span></p>
+                        <div class="bg-blue-50 border border-blue-100 p-5 rounded-xl">
+                            <div class="flex items-center">
+                                <div class="bg-blue-500 text-white p-3 rounded-lg mr-4">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path></svg>
+                                </div>
+                                <div>
+                                    <p class="text-blue-600 text-sm font-bold uppercase tracking-wide">เพศชาย</p>
+                                    <p class="text-3xl font-bold text-blue-900">${data.combined.m.toLocaleString()} <span class="text-base font-normal opacity-60 ml-1">คน</span></p>
+                                </div>
                             </div>
                         </div>
-                        <div class="bg-pink-50 border border-pink-100 p-4 rounded-xl flex items-center">
-                            <div class="bg-pink-500 text-white p-3 rounded-lg mr-4">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                            </div>
-                            <div>
-                                <p class="text-pink-600 text-sm font-semibold">หญิง</p>
-                                <p class="text-2xl font-bold text-pink-900">${data.combined.f.toLocaleString()} <span class="text-sm font-normal opacity-60">คน</span></p>
+                        <div class="bg-pink-50 border border-pink-100 p-5 rounded-xl">
+                            <div class="flex items-center">
+                                <div class="bg-pink-500 text-white p-3 rounded-lg mr-4">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path></svg>
+                                </div>
+                                <div>
+                                    <p class="text-pink-600 text-sm font-bold uppercase tracking-wide">เพศหญิง</p>
+                                    <p class="text-3xl font-bold text-pink-900">${data.combined.f.toLocaleString()} <span class="text-base font-normal opacity-60 ml-1">คน</span></p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Progress Bar for Gender -->
-                    <div class="mb-8">
-                        <div class="flex justify-between text-xs mb-2 font-bold text-slate-500 uppercase">
-                            <span>ชาย ${maleRatio}%</span>
-                            <span>หญิง ${femaleRatio}%</span>
+                    <!-- กราฟสัดส่วนเพศ -->
+                    <div class="mb-8 px-2">
+                        <div class="flex justify-between text-xs mb-2 font-bold text-slate-500">
+                            <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">ชาย ${maleRatio}%</span>
+                            <span class="bg-pink-100 text-pink-700 px-2 py-0.5 rounded">หญิง ${femaleRatio}%</span>
                         </div>
-                        <div class="w-full h-3 bg-slate-100 rounded-full flex overflow-hidden">
+                        <div class="w-full h-4 bg-slate-100 rounded-full flex overflow-hidden shadow-inner">
                             <div style="width: ${maleRatio}%" class="bg-blue-500 h-full"></div>
-                            <div style="width: ${femaleRatio}%" class="bg-pink-500 h-full"></div>
+                            <div style="width: ${femaleRatio}%" class="bg-pink-500 h-full border-l border-white/20"></div>
                         </div>
                     </div>
 
-                    <!-- Nationality Breakdown Table -->
-                    <div class="overflow-hidden border border-slate-100 rounded-xl">
-                        <table class="w-full text-left">
-                            <thead class="bg-slate-50 text-slate-500 text-sm">
+                    <!-- ตารางรายละเอียดสัญชาติ -->
+                    <div class="overflow-hidden border border-slate-100 rounded-xl shadow-sm">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
                                 <tr>
-                                    <th class="p-3 font-semibold">แยกตามสัญชาติ</th>
-                                    <th class="p-3 font-semibold text-right">ชาย</th>
-                                    <th class="p-3 font-semibold text-right">หญิง</th>
-                                    <th class="p-3 font-semibold text-right">รวม</th>
+                                    <th class="p-4 font-bold">ข้อมูลสัญชาติ</th>
+                                    <th class="p-4 font-bold text-right">ชาย</th>
+                                    <th class="p-4 font-bold text-right">หญิง</th>
+                                    <th class="p-4 font-bold text-right bg-slate-100">รวม</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 text-slate-700">
-                                <tr>
-                                    <td class="p-3 flex items-center">
-                                        <span class="w-2 h-2 bg-emerald-500 rounded-full mr-2"></span>
-                                        สัญชาติไทย
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="p-4 flex items-center">
+                                        <span class="w-3 h-3 bg-emerald-500 rounded-full mr-3 shadow-sm shadow-emerald-200"></span>
+                                        <span class="font-medium">สัญชาติไทย</span>
                                     </td>
-                                    <td class="p-3 text-right">${data.thai.m.toLocaleString()}</td>
-                                    <td class="p-3 text-right">${data.thai.f.toLocaleString()}</td>
-                                    <td class="p-3 text-right font-bold">${data.thai.total.toLocaleString()}</td>
+                                    <td class="p-4 text-right">${data.thai.m.toLocaleString()}</td>
+                                    <td class="p-4 text-right">${data.thai.f.toLocaleString()}</td>
+                                    <td class="p-4 text-right font-bold bg-slate-50/50">${data.thai.total.toLocaleString()}</td>
                                 </tr>
-                                <tr>
-                                    <td class="p-3 flex items-center text-slate-500">
-                                        <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
-                                        ไม่ใช่สัญชาติไทย
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="p-4 flex items-center">
+                                        <span class="w-3 h-3 bg-amber-500 rounded-full mr-3 shadow-sm shadow-amber-200"></span>
+                                        <span class="font-medium">ไม่ใช่สัญชาติไทย</span>
                                     </td>
-                                    <td class="p-3 text-right">${data.nonThai.m.toLocaleString()}</td>
-                                    <td class="p-3 text-right">${data.nonThai.f.toLocaleString()}</td>
-                                    <td class="p-3 text-right font-bold">${data.nonThai.total.toLocaleString()}</td>
+                                    <td class="p-4 text-right">${data.nonThai.m.toLocaleString()}</td>
+                                    <td class="p-4 text-right">${data.nonThai.f.toLocaleString()}</td>
+                                    <td class="p-4 text-right font-bold bg-slate-50/50">${data.nonThai.total.toLocaleString()}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -223,10 +225,11 @@
             `;
         }
 
-        // Initialize
-        renderVillageList();
-        // Show total summary by default
-        showDetail(0);
+        // เริ่มต้นการทำงานเมื่อหน้าโหลดเสร็จ
+        document.addEventListener('DOMContentLoaded', () => {
+            renderVillageList();
+            showDetail(0); // แสดงยอดรวมเป็นค่าเริ่มต้น
+        });
     </script>
 </body>
 </html>
