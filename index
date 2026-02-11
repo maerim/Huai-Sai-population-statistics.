@@ -2,283 +2,883 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สรุปสถิติประชากร ตำบลห้วยทราย</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Huai Sai Learning Map - Multi Page</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; }
-        .active-village { border-left: 5px solid #1d4ed8; background-color: #eff6ff; }
-        .stat-card { transition: transform 0.2s ease; }
-        .stat-card:hover { transform: translateY(-3px); }
-        .map-container { position: relative; overflow: hidden; border-radius: 1.5rem; }
+        /* --- 1. CORE VARIABLES --- */
+        :root {
+            --primary: #059669; /* Emerald 600 */
+            --primary-dark: #064e3b;
+            --accent: #d97706; /* Amber 600 */
+            --bg-color: #ecfdf5;
+            --text-main: #1f2937;
+            --text-light: #4b5563;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(167, 243, 208, 0.6) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.2) 0px, transparent 50%);
+            background-attachment: fixed;
+            background-size: cover;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* --- 2. PAGE CONTAINER --- */
+        .page-section {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            overflow: hidden;
+            animation: fadeIn 0.4s ease-out;
+            min-height: 700px;
+            position: relative;
+        }
+
+        .page-section.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- 3. NAVIGATION HEADER --- */
+        .nav-header {
+            padding: 20px 40px;
+            background: rgba(255,255,255,0.95);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            /* Sticky Header for Mobile */
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-brand {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-back {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 600;
+            background: #fff;
+            padding: 8px 20px;
+            border-radius: 50px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .btn-back:hover, .btn-back:active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* --- 4. MAIN DASHBOARD (MAP STYLE) --- */
+        .dashboard-content {
+            padding: 30px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .main-title h1 {
+            font-size: 36px;
+            color: var(--primary-dark);
+            margin-bottom: 5px;
+        }
+
+        /* MAP CONTAINER STYLES */
+        .map-scroll-container {
+            position: relative;
+            width: 100%;
+            height: 550px;
+            background-color: #88c057;
+            border-radius: 20px;
+            overflow: hidden; /* Desktop default */
+            box-shadow: inset 0 0 60px rgba(0,0,0,0.1);
+            border: 4px solid #fff;
+            cursor: default;
+        }
+
+        .map-visual {
+            width: 100%;
+            height: 100%;
+            background-image: url('https://lh3.googleusercontent.com/pw/AP1GczMWZ2T3e2gXjvCN4d9A8NL2Ivj8MmTjCUMvrlwI2IZ4S5DORUQr7OpWthsGpMmxv_xF5dkWd_kifu1htyRP7MXNJ4UikKKEIxspjx5C4_3PRnRsUF8BU-bs73_wFjgwo8ors6xD4wOPHyOq-tggzrjH=w1525-h832-s-no-gm?authuser=0'); 
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .map-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        /* PINS */
+        .map-pin {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 10;
+        }
+
+        .map-pin:hover {
+            transform: translate(-50%, -50%) translateY(-15px) scale(1.1);
+            z-index: 20;
+        }
+
+        /* Custom Pin Colors per Village */
+        .pin-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            border: 3px solid white;
+            position: relative;
+        }
+
+        /* Variant Colors */
+        .pin-moo1 .pin-icon { background: linear-gradient(135deg, #10b981, #047857); }
+        .pin-moo2 .pin-icon { background: linear-gradient(135deg, #ec4899, #be185d); }
+        .pin-moo3 .pin-icon { background: linear-gradient(135deg, #f59e0b, #b45309); }
+        .pin-moo4 .pin-icon { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .pin-moo5 .pin-icon { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+
+        .pin-icon::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .pin-icon i {
+            transform: rotate(45deg);
+            color: white;
+            font-size: 18px;
+        }
+        
+        .pin-label {
+            background: white;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-main);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin-top: 12px;
+            white-space: nowrap;
+            transition: all 0.3s;
+            position: relative;
+            border: 2px solid white;
+        }
+        
+        .pin-label::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 0 6px 6px 6px;
+            border-style: solid;
+            border-color: transparent transparent white transparent;
+        }
+
+        .map-pin:hover .pin-label {
+            background: var(--text-main);
+            color: white;
+            border-color: var(--text-main);
+        }
+        .map-pin:hover .pin-label::before {
+             border-color: transparent transparent var(--text-main) transparent;
+        }
+
+        .pin-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            z-index: -1;
+            animation: pulse-ring 2s infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+        }
+
+        /* --- 5. DETAIL PAGE CONTENT --- */
+        .detail-layout {
+            display: flex;
+            flex: 1;
+            height: 100%;
+        }
+        .detail-image-side {
+            flex: 1;
+            background: #e5e7eb;
+            position: relative;
+            min-height: 400px;
+        }
+        .detail-image-side img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+        }
+        .detail-info-side {
+            flex: 1;
+            padding: 50px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Changed to start for better scrolling */
+            overflow-y: auto;
+        }
+        .info-badge {
+            display: inline-block;
+            background: var(--bg-color);
+            color: var(--primary);
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            width: fit-content;
+        }
+        .base-list {
+            margin: 25px 0;
+            display: grid;
+            gap: 12px;
+        }
+        .base-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px; /* Increased padding for touch */
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .base-item:hover, .base-item:active {
+            background: #f0fdf4;
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+        .contact-box {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            margin-bottom: 20px; /* Add bottom margin for scroll */
+        }
+        .contact-link {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+            color: inherit;
+            padding: 15px;
+            border-radius: 12px;
+            transition: background 0.2s;
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+        }
+        .contact-link:hover, .contact-link:active {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        /* --- 6. MODAL (POPUP) --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            padding: 20px;
+        }
+        .modal.show { display: flex; animation: fadeIn 0.3s; }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #64748b;
+            padding: 5px; /* Increase touch area */
+        }
+        .modal-content img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin-top: 10px;
+            max-height: 60vh;
+            object-fit: cover;
+        }
+
+        /* --- RESPONSIVE / MOBILE STYLES --- */
+        @media (max-width: 1024px) {
+             .page-section { min-height: auto; }
+             .detail-layout { flex-direction: column; }
+             .detail-image-side { height: 250px; flex: none; }
+             .detail-info-side { padding: 30px; }
+        }
+
+        @media (max-width: 600px) {
+            body { 
+                padding: 5px; 
+                align-items: flex-start;
+                /* แก้ไขพื้นหลัง: เปลี่ยนเป็น scroll เพื่อไม่ให้ซูมเกินในมือถือ */
+                background-attachment: scroll; 
+                background-position: center top;
+            } 
+            .page-section { 
+                border-radius: 16px; 
+                margin-top: 0; 
+                min-height: 90vh; /* Allow some spacing */
+                border: 1px solid rgba(255,255,255,0.5);
+            }
+            
+            /* Sticky Header Stack */
+            .nav-header { 
+                padding: 12px 15px; 
+                flex-direction: row; /* Keep row */
+                gap: 10px; 
+                justify-content: space-between;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            }
+            .nav-brand { font-size: 16px; width: auto; }
+            .nav-brand i { font-size: 18px; }
+            .btn-back { 
+                width: auto; 
+                padding: 6px 15px; 
+                font-size: 14px;
+            }
+
+            /* Dashboard */
+            .dashboard-content { padding: 15px; }
+            .main-title h1 { font-size: 20px; line-height: 1.3; margin-top: 0;}
+            .main-title p { font-size: 12px; color: #666; }
+
+            /* MAP: FIT SCREEN LOGIC */
+            .map-scroll-container { 
+                width: 100%;
+                /* คำนวณ Aspect Ratio ให้พอดีกับภาพ 1525x832 */
+                aspect-ratio: 1525 / 832;
+                height: auto; 
+                overflow: hidden; 
+                border: 2px solid white;
+                margin-top: 10px;
+                cursor: default;
+                border-radius: 12px; /* ลดความโค้งไม่ให้กินเนื้อหา */
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            }
+            
+            /* Inner visual full width */
+            .map-visual {
+                width: 100%;
+                height: 100%;
+                background-size: 100% 100%; 
+                background-position: center;
+            }
+
+            /* Pins scaled down significantly for fit-screen */
+            .map-pin { 
+                /* Center anchor + Scale down */
+                transform: translate(-50%, -50%) scale(0.55); 
+            } 
+            .map-pin:hover { 
+                /* Center anchor + Small lift + Slightly larger scale */
+                transform: translate(-50%, -50%) translateY(-5px) scale(0.65); 
+            }
+            
+            .pin-label { 
+                font-size: 10px; 
+                padding: 2px 6px; 
+                margin-top: 4px;
+                background: rgba(255,255,255,0.95);
+                border-width: 1px;
+            }
+
+            /* Detail Page Mobile */
+            .detail-image-side { 
+                height: 180px; /* Shorter image to see content */
+            }
+            .detail-info-side { padding: 20px 15px; }
+            .info-badge { font-size: 12px; margin-bottom: 10px; }
+            .detail-info-side h2 { font-size: 22px; line-height: 1.2; }
+            .detail-info-side p { font-size: 14px; }
+            
+            .base-item { 
+                padding: 12px; 
+                font-size: 14px; 
+            }
+            .base-item span { display: flex; align-items: center; gap: 8px; }
+            
+            /* Modal Mobile */
+            .modal { padding: 10px; align-items: flex-end; /* Sheet style or center */ justify-content: center;}
+            .modal-content { 
+                width: 100%; 
+                padding: 20px; 
+                margin-bottom: 20px;
+            }
+            .modal-close-btn { top: 5px; right: 5px; }
+        }
     </style>
 </head>
-<body class="text-slate-800">
+<body>
 
-    <!-- Header Section -->
-    <header class="bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-xl p-8 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
-            <div class="text-center md:text-left">
-                <h1 class="text-3xl font-bold tracking-tight">สรุปสถิติจำนวนประชากรตำบลห้วยทราย</h1>
-                <p class="text-blue-100 mt-1 opacity-90">อำเภอแม่ริม จังหวัดเชียงใหม่ | ข้อมูลเดือน กันยายน 2568</p>
+    <!-- ========================================== -->
+    <!-- หน้า 1: หน้าหลัก (DASHBOARD - MAP)         -->
+    <!-- ========================================== -->
+    <div id="page-home" class="page-section active">
+        <div class="dashboard-content">
+            <div class="main-title">
+                <h1><i class="fa-solid fa-map-location-dot"></i> ศูนย์การเรียนรู้ชุมชนตำบลห้วยทราย</h1>
+                <p>คลิกที่หมุดหมู่บ้านบนแผนที่ เพื่อเข้าชมข้อมูลกิจกรรม</p>
             </div>
-            <div class="mt-6 md:mt-0 flex items-center bg-white/10 px-6 py-3 rounded-2xl backdrop-blur-md border border-white/20">
-                <div class="mr-4 text-left">
-                    <p class="text-xs uppercase font-semibold text-blue-100">ประชากรรวม</p>
-                    <p class="text-3xl font-bold">4,889 <span class="text-sm font-normal">คน</span></p>
-                </div>
-                <div class="h-10 w-px bg-white/20 mx-2"></div>
-                <div class="ml-4 text-right">
-                    <p class="text-xs uppercase font-semibold text-blue-100">จุดหนาแน่น</p>
-                    <p class="text-lg font-bold">หมู่ที่ 2</p>
+
+            <!-- MAP VISUALIZATION (Fit Screen) -->
+            <div class="map-scroll-container">
+                <div class="map-visual">
+                    <div class="map-overlay"></div>
+
+                    <!-- Moo 4 Pin (สีฟ้า): ปรับไปขวาให้อยู่กึ่งกลางสีฟ้า -->
+                    <div class="map-pin pin-moo4" style="top: 45%; left: 28%;" onclick="goToPage('page-moo4')">
+                        <div class="pin-pulse"></div>
+                        <div class="pin-icon"><i class="fa-solid fa-wheat-awn"></i></div>
+                        <div class="pin-label">หมู่ 4 บ้านแม่แอน</div>
+                    </div>
+
+                    <!-- Moo 5 Pin (สีชมพูอมม่วง): อยู่กึ่งกลางแผนที่สีชมพูอมม่วง -->
+                    <div class="map-pin pin-moo5" style="top: 15%; left: 48%;" onclick="goToPage('page-moo5')">
+                        <div class="pin-pulse"></div>
+                        <div class="pin-icon"><i class="fa-solid fa-mortar-pestle"></i></div>
+                        <div class="pin-label">หมู่ 5 บ้านหัวฝาย</div>
+                    </div>
+
+                    <!-- Moo 3 Pin (สีเหลือง): ปรับลงมาและซ้ายให้อยู่กึ่งกลางสีเหลือง -->
+                    <div class="map-pin pin-moo3" style="top: 32%; left: 65%;" onclick="goToPage('page-moo3')">
+                        <div class="pin-pulse"></div>
+                        <div class="pin-icon"><i class="fa-brands fa-envira"></i></div>
+                        <div class="pin-label">หมู่ 3 บ้านห้วยทราย</div>
+                    </div>
+
+                    <!-- Moo 2 Pin (สีชมพูอมแดง): ขยับลงมาให้อยู่กึ่งกลางสีชมพูอมแดง -->
+                    <div class="map-pin pin-moo2" style="top: 58%; left: 75%;" onclick="goToPage('page-moo2')">
+                        <div class="pin-pulse"></div>
+                        <div class="pin-icon"><i class="fa-solid fa-drum"></i></div>
+                        <div class="pin-label">หมู่ 2 บ้านหนองปลามัน</div>
+                    </div>
+
+                    <!-- Moo 1 Pin (สีเขียว): ขยับลงมาให้อยู่กึ่งกลางสีเขียว -->
+                    <div class="map-pin pin-moo1" style="top: 82%; left: 65%;" onclick="goToPage('page-moo1')">
+                        <div class="pin-pulse"></div>
+                        <div class="pin-icon"><i class="fa-solid fa-gopuram"></i></div>
+                        <div class="pin-label">หมู่ 1 บ้านอ้อย</div>
+                    </div>
                 </div>
             </div>
         </div>
-    </header>
+    </div>
 
-    <main class="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <!-- Sidebar: Village Selection -->
-        <aside class="lg:col-span-4 space-y-4">
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden h-fit">
-                <div class="p-5 bg-slate-50 border-b border-slate-100">
-                    <h2 class="font-bold text-slate-700 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        เลือกดูข้อมูลรายหมู่บ้าน
-                    </h2>
-                </div>
-                <div id="villageMenu" class="divide-y divide-slate-100">
-                    <!-- Village buttons sorted 1-5 -->
-                </div>
+
+    <!-- ========================================== -->
+    <!-- หน้า 2: หมู่ 1 (MOO 1 DETAILS)             -->
+    <!-- ========================================== -->
+    <div id="page-moo1" class="page-section">
+        <div class="nav-header">
+            <div class="nav-brand"><i class="fa-solid fa-gopuram"></i> หมู่ 1 บ้านอ้อย</div>
+            <button class="btn-back" onclick="goToPage('page-home')">
+                <i class="fa-solid fa-arrow-left"></i> กลับ
+            </button>
+        </div>
+        <div class="detail-layout">
+            <div class="detail-image-side">
+                <img src="https://lh3.googleusercontent.com/pw/AP1GczM5H7HZVwy8lSUn0mNBK5kYBGqdJ7uW7LdOqjl6o49SWvqm_6pz_3cFGas5ZdppCjYNGOdngDc3ii_wFnDknDp1NaCY65oZrpcPZyh3W8IPwsLg_lqrruWKyRIGMr-ta7efysD_3QFd5oyuuLjI1xKx=w1179-h482-s-no-gm?authuser=0" alt="วัดตำหนัก">
             </div>
+            <div class="detail-info-side">
+                <span class="info-badge">วัฒนธรรม & ประเพณี</span>
+                <h2>ศูนย์เรียนรู้ชุมชน<br>วัดตำหนักธรรมนิมิตร</h2>
+                <p style="color:#666; margin-top:10px;">แหล่งรวมภูมิปัญญาล้านนา การสืบสานประเพณี และศิลปะการแสดงท้องถิ่น</p>
 
-            <!-- Global Insight Card -->
-            <div class="bg-blue-950 text-white rounded-3xl p-6 shadow-lg shadow-blue-200">
-                <h3 class="text-lg font-bold mb-4 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1a1 1 0 112 0v1a1 1 0 11-2 0zM13.243 14.657a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM16 10a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
-                    ข้อมูลเชิงลึก
-                </h3>
-                <ul class="space-y-3 text-blue-200 text-sm">
-                    <li class="flex items-start">
-                        <span class="mr-2">•</span>
-                        <span>หมู่ 2 หนองปลามัน มีประชากรหนาแน่นที่สุด (29.3%)</span>
-                    </li>
-                    <li class="flex items-start">
-                        <span class="mr-2">•</span>
-                        <span>หมู่ 4 แม่แอน มีกลุ่มประชากรไม่ใช่สัญชาติไทยสูงที่สุด</span>
-                    </li>
-                    <li class="flex items-start">
-                        <span class="mr-2">•</span>
-                        <span>ตำบลห้วยทรายมีสัดส่วนหญิงมากกว่าชายเล็กน้อย (51.4%)</span>
-                    </li>
-                </ul>
-            </div>
-        </aside>
-
-        <!-- Main Display: Detail Panel -->
-        <section class="lg:col-span-8 space-y-6">
-            <div id="detailView" class="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-slate-200 min-h-[400px]">
-                <div class="animate-pulse flex flex-col items-center justify-center h-full">
-                    <div class="h-8 w-48 bg-slate-100 rounded mb-4"></div>
-                    <div class="h-4 w-64 bg-slate-100 rounded mb-8"></div>
-                    <div class="grid grid-cols-2 gap-4 w-full">
-                        <div class="h-24 bg-slate-50 rounded-2xl"></div>
-                        <div class="h-24 bg-slate-50 rounded-2xl"></div>
+                <div class="base-list">
+                    <div class="base-item" onclick="showImage('ฐานข่วงพญ๋าล้านนา', 'https://lh3.googleusercontent.com/pw/AP1GczNFTmIqXDh1OHJPeaaZZFMfUGvX3jfl8t1bmNGm3GrUoISGgipw_JY0IhGLmoJ_8tnCFgau8IotkzfW8wAumgrnUzIaDv5eQz0cDJBa0LZoppF0pe0JjROmq_8GtFw35PzY4tEgGQ4s_VoQ8C859A0s=w926-h619-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-star" style="color:#d97706"></i> ฐานข่วงพญ๋าล้านนา</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                    <div class="base-item" onclick="showImage('พิธีธรรมล้านนา', 'https://lh3.googleusercontent.com/pw/AP1GczMwkDucCqiZKj3TkL4__O75pxJzq5_UdKe96hKY7qQhy15F91fdW6U8PzKrPAJMsJ1_zpFv2nbUg7LWG-imCYDQgsJi_weXZdcoyZ6lLxume1p1xt9WzQqQwP-jEhMNh1rQjyb2WssveZhFVew00Q_Y=w675-h900-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-hands-praying" style="color:#d97706"></i> พิธีสืบชะตา/สะเดาะเคราะห์</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                    <div class="base-item" onclick="showImage('ศิลปะการแสดง', 'https://lh3.googleusercontent.com/pw/AP1GczPBsP-jdFLOwPfj3S1CWdURbmumWPr1cKvdS0PflQvrXCUXwGvWjUXOm9opBqVoppnoF9gSuEmxFMt0gj6mmJ1fwV543itJfbc2iWBj4SUx8U70EE5EupLdCMSTF8PYJpjBGTbLzE_SakR-bjvFmkQq=w600-h402-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-masks-theater" style="color:#d97706"></i> ฟ้อนเล็บ/ฟ้อนเจิง/ลำดาบ</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                    <div class="base-item" onclick="showImage('การทำขนม', 'https://lh3.googleusercontent.com/pw/AP1GczPSrsL8IaRA5E4EVmIRJw3cncQ_dFUwxRkjOA0_g9plaT8D3v9iyWq5hYA9PY1SklhXSpkM3PPPeN6iz8nQtol5_enY0PmXD2OG_JsVwUJOIelNcWfNlzQDy4co2dXEIS3NuueTenzf6zyEbc-wVD50=w1199-h900-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-cookie-bite" style="color:#d97706"></i> ฐานการทำขนม</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
                     </div>
                 </div>
-            </div>
-        </section>
 
-    </main>
-
-    <footer class="text-center py-12 text-slate-400 text-sm">
-        &copy; 2026 ระบบรายงานสถิติประชากร ตำบลห้วยทราย อำเภอแม่ริม จังหวัดเชียงใหม่
-    </footer>
-
-    <script>
-        // Updated data array with correct numerical order
-        const data = [
-            { 
-                id: 0, 
-                name: "รวมทั้งตำบลห้วยทราย", 
-                total: 4889, male: 2373, female: 2516, thai: 4406, nonThai: 483, pct: 100,
-                mapQuery: "ตำบล+ห้วยทราย+แม่ริม+เชียงใหม่"
-            },
-            { 
-                id: 1, 
-                name: "หมู่ที่ 1 บ้านอ้อย", 
-                total: 1096, male: 500, female: 596, thai: 1047, nonThai: 49, pct: 22.4,
-                mapQuery: "บ้านอ้อย+ห้วยทราย+แม่ริม"
-            },
-            { 
-                id: 2, 
-                name: "หมู่ที่ 2 บ้านหนองปลามัน", 
-                total: 1433, male: 673, female: 760, thai: 1358, nonThai: 75, pct: 29.3,
-                mapQuery: "บ้านหนองปลามัน+เชียงใหม่"
-            },
-            { 
-                id: 3, 
-                name: "หมู่ที่ 3 บ้านห้วยทราย", 
-                total: 963, male: 475, female: 488, thai: 921, nonThai: 42, pct: 19.7,
-                mapQuery: "บ้านห้วยทราย+ห้วยทราย+แม่ริม"
-            },
-            { 
-                id: 4, 
-                name: "หมู่ที่ 4 บ้านแม่แอน", 
-                total: 945, male: 481, female: 464, thai: 639, nonThai: 306, pct: 19.3,
-                mapQuery: "บ้านแม่แอน+ห้วยทราย+แม่ริม"
-            },
-            { 
-                id: 5, 
-                name: "หมู่ที่ 5 บ้านหัวฝาย", 
-                total: 452, male: 244, female: 208, thai: 441, nonThai: 11, pct: 9.3,
-                mapQuery: "บ้านหัวฝาย+ห้วยทราย+แม่ริม"
-            }
-        ];
-
-        function init() {
-            renderMenu();
-            view(0);
-        }
-
-        function renderMenu() {
-            const menu = document.getElementById('villageMenu');
-            menu.innerHTML = data.map(v => `
-                <button onclick="view(${v.id})" id="btn-${v.id}" class="village-btn w-full px-6 py-4 flex justify-between items-center hover:bg-blue-50/50 transition-all text-left">
-                    <div>
-                        <p class="font-bold ${v.id === 0 ? 'text-blue-800' : 'text-slate-700'}">${v.name}</p>
-                        <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">${v.pct}% ของประชากรตำบล</p>
-                    </div>
-                    <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-sm font-bold shadow-sm">${v.total.toLocaleString()}</span>
-                </button>
-            `).join('');
-        }
-
-        function view(id) {
-            const item = data.find(v => v.id === id);
-            const viewDiv = document.getElementById('detailView');
-            
-            document.querySelectorAll('.village-btn').forEach(b => b.classList.remove('active-village'));
-            const activeBtn = document.getElementById(`btn-${id}`);
-            if (activeBtn) activeBtn.classList.add('active-village');
-
-            const mPct = ((item.male / item.total) * 100).toFixed(1);
-            const fPct = ((item.female / item.total) * 100).toFixed(1);
-            const thaiPct = ((item.thai / item.total) * 100).toFixed(1);
-            const nonThaiPct = ((item.nonThai / item.total) * 100).toFixed(1);
-
-            viewDiv.innerHTML = `
-                <div class="space-y-8 animate-[fadeIn_0.5s_ease-out]">
-                    <!-- Title & Header -->
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-100 pb-6">
+                <div class="contact-box">
+                    <a href="tel:0819516336" class="contact-link">
+                        <div style="background:#059669; color:white; width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fa-solid fa-phone"></i>
+                        </div>
                         <div>
-                            <span class="text-blue-600 font-black uppercase text-[10px] tracking-[0.2em]">STATISTICS OVERVIEW</span>
-                            <h2 class="text-3xl font-bold text-slate-900">${item.name}</h2>
+                            <div style="font-size:11px; color:#059669; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">ผู้รับผิดชอบ/ประสานงาน</div>
+                            <div style="font-size:14px; color:#333; margin-top:2px;">เจ้าอาวาสวัดตำหนักนิมิต</div>
+                            <div style="font-weight:700; color:#059669; font-size:18px; line-height:1.2;">081-951-6336</div>
+                            <div style="font-size:11px; color:#9ca3af;">(กดเพื่อโทรออก)</div>
                         </div>
-                        <div class="mt-4 md:mt-0 flex items-center space-x-3">
-                            <div class="text-right">
-                                <p class="text-slate-400 text-[10px] font-bold uppercase">สัดส่วนพื้นที่</p>
-                                <p class="text-2xl font-black text-blue-600">${item.pct}%</p>
-                            </div>
-                        </div>
-                    </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    <!-- Main Stats Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="stat-card bg-blue-50/70 p-6 rounded-3xl border border-blue-100 shadow-sm">
-                            <div class="flex items-center">
-                                <div class="bg-blue-600 text-white p-3 rounded-2xl mr-4 shadow-lg shadow-blue-200">
-                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path></svg>
-                                </div>
-                                <div>
-                                    <p class="text-blue-700 text-xs font-bold uppercase">เพศชาย</p>
-                                    <p class="text-3xl font-black text-blue-900">${item.male.toLocaleString()}</p>
-                                    <div class="flex items-center text-blue-500 text-xs font-bold">
-                                        <div class="w-16 h-1.5 bg-blue-200 rounded-full mr-2 overflow-hidden">
-                                            <div style="width: ${mPct}%" class="bg-blue-600 h-full"></div>
-                                        </div>
-                                        ${mPct}%
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="stat-card bg-pink-50/70 p-6 rounded-3xl border border-pink-100 shadow-sm">
-                            <div class="flex items-center">
-                                <div class="bg-pink-500 text-white p-3 rounded-2xl mr-4 shadow-lg shadow-pink-200">
-                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path></svg>
-                                </div>
-                                <div>
-                                    <p class="text-pink-700 text-xs font-bold uppercase">เพศหญิง</p>
-                                    <p class="text-3xl font-black text-pink-900">${item.female.toLocaleString()}</p>
-                                    <div class="flex items-center text-pink-500 text-xs font-bold">
-                                        <div class="w-16 h-1.5 bg-pink-200 rounded-full mr-2 overflow-hidden">
-                                            <div style="width: ${fPct}%" class="bg-pink-500 h-full"></div>
-                                        </div>
-                                        ${fPct}%
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Nationality Progress Section -->
-                    <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-bold text-slate-700 text-sm">การแยกสัญชาติ</h3>
-                            <div class="flex space-x-3">
-                                <div class="flex items-center text-[10px] font-bold text-emerald-600">
-                                    <span class="w-2 h-2 bg-emerald-500 rounded-full mr-1.5"></span> ไทย ${thaiPct}%
-                                </div>
-                                <div class="flex items-center text-[10px] font-bold text-amber-600">
-                                    <span class="w-2 h-2 bg-amber-500 rounded-full mr-1.5"></span> อื่นๆ ${nonThaiPct}%
-                                </div>
-                            </div>
-                        </div>
-                        <div class="w-full h-10 bg-slate-200 rounded-2xl overflow-hidden flex shadow-inner p-1">
-                            <div style="width: ${thaiPct}%" class="bg-emerald-500 h-full rounded-xl flex items-center justify-center text-[10px] text-white font-bold transition-all duration-1000"></div>
-                            <div style="width: ${nonThaiPct}%" class="bg-amber-500 h-full rounded-xl ml-1 flex items-center justify-center text-[10px] text-white font-bold transition-all duration-1000"></div>
-                        </div>
-                        <div class="flex justify-between mt-4">
-                            <div class="text-left">
-                                <p class="text-slate-400 text-[10px] uppercase font-bold">สัญชาติไทย</p>
-                                <p class="text-xl font-black text-emerald-700">${item.thai.toLocaleString()} <span class="text-xs font-normal">คน</span></p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-slate-400 text-[10px] uppercase font-bold">ไม่ใช่สัญชาติไทย</p>
-                                <p class="text-xl font-black text-amber-700">${item.nonThai.toLocaleString()} <span class="text-xs font-normal">คน</span></p>
-                            </div>
-                        </div>
-                    </div>
+    <!-- ========================================== -->
+    <!-- หน้า 3: หมู่ 2 (MOO 2 DETAILS)             -->
+    <!-- ========================================== -->
+    <div id="page-moo2" class="page-section">
+        <div class="nav-header">
+            <div class="nav-brand"><i class="fa-solid fa-drum"></i> หมู่ 2 บ้านหนองปลามัน</div>
+            <button class="btn-back" onclick="goToPage('page-home')">
+                <i class="fa-solid fa-arrow-left"></i> กลับ
+            </button>
+        </div>
+        <div class="detail-layout">
+            <div class="detail-image-side">
+                <img src="https://lh3.googleusercontent.com/pw/AP1GczONwugDb54ftR__77SkF5MNgHD-5IWrkAhYRppCZCRphfRMf95BWxTz_VTku9T4iki7j1QktStdCBo1ueU-r7c-v0wZVGDz7gK_xvhsPSKHnyNmhhufBNXwdyirNznCigixOdNZ0wx_DjsiJkBsCYMF=w240-h160-s-no-gm?authuser=0" alt="กิจกรรมชุมชน">
+            </div>
+            <div class="detail-info-side">
+                <span class="info-badge">ดนตรี & อาชีพ</span>
+                <h2>ศูนย์เรียนรู้ชุมชน<br>บ้านหนองปลามัน</h2>
+                <p style="color:#666; margin-top:10px;">ศูนย์รวมกิจกรรมเพื่อทุกวัย ตั้งแต่ศิลปะดนตรีล้านนาไปจนถึงการส่งเสริมอาชีพ</p>
 
-                    <!-- Map Section -->
-                    <div class="space-y-3">
-                        <h3 class="font-bold text-slate-700 text-sm flex items-center">
-                            <svg class="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m6-2l5.447 2.724a1 1 0 01.553.894v10.764a1 1 0 01-1.447.894L15 17m0 0l-6 3m6-3V7m-6 10V4"></path></svg>
-                            ตำแหน่งที่ตั้งบนแผนที่
-                        </h3>
-                        <div class="map-container border border-slate-200 shadow-lg h-[300px]">
-                            <iframe 
-                                width="100%" 
-                                height="100%" 
-                                style="border:0;" 
-                                allowfullscreen="" 
-                                loading="lazy" 
-                                src="https://maps.google.com/maps?q=${item.mapQuery}&t=&z=14&ie=UTF8&iwloc=&output=embed">
-                            </iframe>
-                        </div>
-                        <div class="flex justify-end">
-                            <a href="https://www.google.com/maps/search/${item.mapQuery}" target="_blank" class="text-blue-600 text-[11px] font-bold hover:underline flex items-center">
-                                เปิดใน Google Maps 
-                                <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                            </a>
-                        </div>
+                <div class="base-list">
+                    <div class="base-item" onclick="showImage('ฐานตีกลองสะบัดชัย', 'https://lh3.googleusercontent.com/pw/AP1GczPjIxO_mksI32ks_2K_-O5Z9OK5tQmjqAPdWikXUFlcS9jrcJ3yUh6zzxh2LqqG1AtMFHHJ04BBf7EU4bLRHkrDxZunzOY8GJOyHfVzLTE88jbfeclfYWN55Y_LyFNGGG9itHYEX8EbIcskFoOxS_pT=w1024-h678-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-music" style="color:#d97706"></i> ฐานตีกลองสะบัดชัย</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                    <div class="base-item" onclick="showImage('เย็บปักถักร้อย', 'https://lh3.googleusercontent.com/pw/AP1GczNnKX474Og3sRJ7RwxnbL2Zn1d4_q7YHj37ZIBcaUXVWzcUkTnUaeBs3HeFFpX-wE9JDod8Gv-30HgBcrFUrT6oh13x0MJMmuq4nBmkvX9OQqLQB63-2IY552LYPxfNSGDcuAREfZJ9X62W7q3nnPIm=w1199-h900-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-shirt" style="color:#d97706"></i> เย็บปักถักร้อย</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                    <div class="base-item" onclick="showImage('โรงเรียนผู้สูงอายุ', 'https://lh3.googleusercontent.com/pw/AP1GczNrERdRcYtePFytNvtEHyQPBQNlkMCHFnVvEaGHtcus2PcVC1YMaCTK1NI0vrp6MxO-sdlKOfXIkfaJ4aeJnFPHDubwGQOaVVQAtLVWS6Ur2sjzoLCOCF98LuTqcU7htJpy6i_5xAV5ZV4XpYHb5gv5=w1525-h762-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-users" style="color:#d97706"></i> โรงเรียนผู้สูงอายุ</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                    <div class="base-item" onclick="showImage('ศูนย์ฝึกอาชีพชุมชน', 'https://lh3.googleusercontent.com/pw/AP1GczPLEteYuYIyIO8Vxf6O_zKhu-XTLcUCBStcjIKLQYkmQ8rp6LT7mknQfu_Bnqxn6P3FhaE_XZWmf1lGuLch9qqVguzfoz0TtWg4dDKQcj8CDYmhLzMdB4C5ZtpJm7PKKxpjRQ1SsvGtcJfBZanVsIr6=w1525-h762-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-shop" style="color:#d97706"></i> ศูนย์ฝึกอาชีพชุมชน (ศกร.ตำบล)</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
                     </div>
                 </div>
-            `;
+
+                <div class="contact-box">
+                    <a href="tel:0904994529" class="contact-link">
+                        <div style="background:#059669; color:white; width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fa-solid fa-phone"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:11px; color:#059669; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">ผู้รับผิดชอบ/ประสานงาน</div>
+                            <div style="font-size:14px; color:#333; margin-top:2px;">นางสุรินทร ลาภวัตธนบูรณ์</div>
+                            <div style="font-weight:700; color:#059669; font-size:18px; line-height:1.2;">090-499-4529</div>
+                            <div style="font-size:11px; color:#9ca3af;">(กดเพื่อโทรออก)</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- หน้า 4: หมู่ 3 (MOO 3 DETAILS)             -->
+    <!-- ========================================== -->
+    <div id="page-moo3" class="page-section">
+        <div class="nav-header">
+            <div class="nav-brand"><i class="fa-brands fa-envira"></i> หมู่ 3 บ้านห้วยทราย</div>
+            <button class="btn-back" onclick="goToPage('page-home')">
+                <i class="fa-solid fa-arrow-left"></i> กลับ
+            </button>
+        </div>
+        <div class="detail-layout">
+            <div class="detail-image-side">
+                <img src="https://www.matichon.co.th/wp-content/uploads/2023/01/S__47120865.jpg" alt="ใยกัญชง">
+            </div>
+            <div class="detail-info-side">
+                <span class="info-badge">หัตถกรรม & ศิลปะ</span>
+                <h2>ศูนย์ผลิตภัณฑ์<br>ใยกัญชงทรายทอง</h2>
+                <p style="color:#666; margin-top:10px;">โดดเด่นด้านงานหัตถกรรมจากเส้นใยธรรมชาติ และศิลปะร่วมสมัย</p>
+
+                <div class="base-list">
+                    <div class="base-item" onclick="showImage('ผลิตภัณฑ์ใยกัญชง', 'https://lh3.googleusercontent.com/pw/AP1GczMzV5CSGkmSRSrzzVv5tgedRBK8TahxeTQAajq_bxWDMhnsCZvV-v1Pi2tZuQdXMxvzOZQIP9Vr0bcy0FCuEM7RUILFSS_kIqIdZQpsDEkIzIuZ7wovthR1Huhc2Ib7QODv6Qk0XRgsyZrLLDj5vwGa=w1183-h638-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-leaf" style="color:#d97706"></i> ฐานผลิตภัณฑ์จากใยกัญชง</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                    <div class="base-item" onclick="showImage('งานถักโคเชต์', 'https://shopee.co.th/blog/wp-content/uploads/2021/08/%E0%B8%96%E0%B8%B1%E0%B8%81%E0%B9%82%E0%B8%84%E0%B8%A3%E0%B9%80%E0%B8%8A%E0%B8%95%E0%B9%8C-1140x675.jpg')">
+                        <span><i class="fa-solid fa-mitten" style="color:#d97706"></i> ฐานโคเชต์สร้างรายได้</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                    <div class="base-item" onclick="showImage('ศิลปะอีโรติก', 'https://lh3.googleusercontent.com/pw/AP1GczPhDvNsR3ZxD7YvfI2sk7NVrovXGnnPmD6-1UQHTIj7sZ67y4FwqNGQ3XfUS7BYREkYCIU0u_mksSPZ-2Kn_nOMrCLRcHu_l9UCTzwTdYJHlV2xgm_katUHviG7dq1kbre9UHkjvpoKdpNgIv7Q4At5=w1200-h800-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-palette" style="color:#d97706"></i> ฐานศิลปะและธรรมชาติ (Erotic)</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                </div>
+
+                <div class="contact-box">
+                    <a href="tel:0812894744" class="contact-link">
+                        <div style="background:#059669; color:white; width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fa-solid fa-phone"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:11px; color:#059669; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">ผู้รับผิดชอบ/ประสานงาน</div>
+                            <div style="font-size:14px; color:#333; margin-top:2px;">นางนวลศรี พร้อมใจ</div>
+                            <div style="font-weight:700; color:#059669; font-size:18px; line-height:1.2;">081-289-4744</div>
+                            <div style="font-size:11px; color:#9ca3af;">(กดเพื่อโทรออก)</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- หน้า 5: หมู่ 4 (MOO 4 DETAILS)             -->
+    <!-- ========================================== -->
+    <div id="page-moo4" class="page-section">
+        <div class="nav-header">
+            <div class="nav-brand"><i class="fa-solid fa-wheat-awn"></i> หมู่ 4 บ้านแม่แอน</div>
+            <button class="btn-back" onclick="goToPage('page-home')">
+                <i class="fa-solid fa-arrow-left"></i> กลับ
+            </button>
+        </div>
+        <div class="detail-layout">
+            <div class="detail-image-side">
+                <img src="https://lh3.googleusercontent.com/pw/AP1GczPBGTTBvGisl0dYo6wLFbLiCxNo0cdfOH8mGVBe5wTd8eIIb6mLTjgJR0X74Pa3dBlNMH8If2M5CFz0uk0a5wdTSbHZdBJ5mhq7vTEFzwM3ut_9l6YnXf-UtDxGM2fbdjhbX8TEv2r7IYNQK5g3ZQHY=w1199-h900-s-no-gm?authuser=0" alt="เกษตร">
+            </div>
+            <div class="detail-info-side">
+                <span class="info-badge">เกษตร & ความยั่งยืน</span>
+                <h2>ศูนย์เรียนรู้ชุมชน<br>เศรษฐกิจพอเพียง</h2>
+                <p style="color:#666; margin-top:10px;">วิถีเกษตรทฤษฎีใหม่ การพึ่งพาตนเอง และอาหารปลอดภัย</p>
+
+                <div class="base-list">
+                    <div class="base-item" onclick="showImage('เกษตรทฤษฎีใหม่', 'https://media.komchadluek.net/media/img/size1/2016/10/27/i6afihg9afbkikfeh8hga.jpg?x-image-process=style/lg-webp')">
+                        <span><i class="fa-solid fa-seedling" style="color:#d97706"></i> ฐานเกษตรทฤษฎีใหม่</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                    <div class="base-item" onclick="showImage('แปรรูปกล้วย', 'https://lh3.googleusercontent.com/pw/AP1GczOMWsR3EBIX8OoTyCa058ZaRq-XwgS1QGpgLeA_6RnIexCrNFY8nrna7VeQ0qPGB7WPUUpQtuOjYTJ61LAzGHZQPflfPh8EdMAO2HCoP8SHT-FHBusHw9IRyu7tSOUQdIe_yPoRvY9qVwLvkeU_U7Y0=w700-h394-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-utensils" style="color:#d97706"></i> ฐานการแปรรูปกล้วย</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                    <div class="base-item" onclick="showImage('ข้าวอินทรีย์', 'https://lh3.googleusercontent.com/pw/AP1GczMBW_sajX5ncpNXr_M6HBYw2SBBI9Q6qL3NOTTIs-zTvwAshedaL5PVqDU_6c8cvyHHWrp5bl2nojpgKmq1_wKebQ08-KF332cIFc8yFewwaICeB8TWinHaEYSP7TQuZGEqpkfdcakZGJM5t6mVYxty=w1280-h720-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-wheat-awn" style="color:#d97706"></i> ฐานข้าวอินทรีย์</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                    <div class="base-item" onclick="showImage('ไข่ไก่อารมณ์ดี', 'https://lh3.googleusercontent.com/pw/AP1GczN6JO2P2xEFvW_0XiDS1susGI27SMbBv5oXazwi5CbIW65gEBmOii4LA2fF8UGAwokWyD2r8mXxeRkSKXkLeQI56AtUoJ2B8peQnHgdv5GeqqcNkJ7MAFHInAEpyDbcvqHYZnsZl5dkM-UWYRwPnAQn=w725-h476-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-egg" style="color:#d97706"></i> ฐานไข่ไก่อารมณ์ดี</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                </div>
+
+                <div class="contact-box">
+                    <a href="tel:0850374209" class="contact-link">
+                        <div style="background:#059669; color:white; width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fa-solid fa-phone"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:11px; color:#059669; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">ผู้รับผิดชอบ/ประสานงาน</div>
+                            <div style="font-size:14px; color:#333; margin-top:2px;">นางถนิมนันธ์ สิตตะวิบุล</div>
+                            <div style="font-weight:700; color:#059669; font-size:18px; line-height:1.2;">085-037-4209</div>
+                            <div style="font-size:11px; color:#9ca3af;">(กดเพื่อโทรออก)</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- หน้า 6: หมู่ 5 (MOO 5 DETAILS)             -->
+    <!-- ========================================== -->
+    <div id="page-moo5" class="page-section">
+        <div class="nav-header">
+            <div class="nav-brand"><i class="fa-solid fa-mortar-pestle"></i> หมู่ 5 บ้านหัวฝาย</div>
+            <button class="btn-back" onclick="goToPage('page-home')">
+                <i class="fa-solid fa-arrow-left"></i> กลับ
+            </button>
+        </div>
+        <div class="detail-layout">
+            <div class="detail-image-side">
+                <img src="https://lh3.googleusercontent.com/pw/AP1GczNKkU8nPoLelHEJJo8OK0jdEKjKrAmo_81viSB-ZkIHwrD7A8eydbzOnUaiwVb6xVxJ5c78IcR3Et6-JQfalfCPdfGE19ecysQwTZm1vcDH1Fho3HAVv4s7tk3GhcojdsVZ6xX6XAC7MPEo2ktHJ7pn=w863-h621-s-no-gm?authuser=0" alt="สมุนไพร">
+            </div>
+            <div class="detail-info-side">
+                <span class="info-badge">สมุนไพร & สุขภาพ</span>
+                <h2>ศูนย์เรียนรู้ชุมชน<br>ฮีฟเฮิร์บเพื่อสุขภาพ</h2>
+                <p style="color:#666; margin-top:10px;">แหล่งเรียนรู้ด้านสมุนไพรไทย และการดูแลสุขภาพแบบองค์รวม</p>
+
+                <div class="base-list">
+                    <div class="base-item" onclick="showImage('สมุนไพรเพื่อสุขภาพ', 'https://lh3.googleusercontent.com/pw/AP1GczPHCJ5n0-dBHjj2zUtx5Op9zP3CrvqdKbuCkiCkTFzgb0ffwFe99UZjlXC6pbMtnb-pQ-btOfBtNWJpzqGcqCR6yIQm9yYhnvvqFjUvhjIGcW3g-wcWPfgs15S-iRfRw_25l2LD19ylu7Qx91P2tzQk=w1525-h858-s-no-gm?authuser=0')">
+                        <span><i class="fa-solid fa-leaf" style="color:#d97706"></i> ฐานสมุนไพรเพื่อสุขภาพ</span>
+                        <i class="fa-solid fa-camera" style="color:#059669"></i>
+                    </div>
+                </div>
+
+                <div class="contact-box">
+                    <a href="tel:0655616385" class="contact-link">
+                        <div style="background:#059669; color:white; width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fa-solid fa-phone"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:11px; color:#059669; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">ผู้รับผิดชอบ/ประสานงาน</div>
+                            <div style="font-size:14px; color:#333; margin-top:2px;">นางทิพรัตน์ ศิลาน้อย</div>
+                            <div style="font-weight:700; color:#059669; font-size:18px; line-height:1.2;">065-561-6385</div>
+                            <div style="font-size:11px; color:#9ca3af;">(กดเพื่อโทรออก)</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL POPUP -->
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+            <h3 id="modalTitle" style="color:#064e3b; margin-bottom:10px;">ชื่อกิจกรรม</h3>
+            <img id="modalImage" src="" alt="Activity">
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT: Logic for switching "Pages" -->
+    <script>
+        // ฟังก์ชันเปลี่ยนหน้า
+        function goToPage(pageId) {
+            // 1. ซ่อนทุกหน้า
+            const pages = document.querySelectorAll('.page-section');
+            pages.forEach(page => {
+                page.classList.remove('active');
+            });
+
+            // 2. แสดงหน้าเป้าหมาย
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                // เลื่อนหน้าจอขึ้นไปบนสุดเสมอเมื่อเปลี่ยนหน้า
+                window.scrollTo(0, 0);
+            }
         }
 
-        window.onload = init;
+        // ฟังก์ชันแสดงรูปภาพ (Popup)
+        function showImage(title, customUrl = null) {
+            const modal = document.getElementById('imageModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalImage = document.getElementById('modalImage');
+
+            modalTitle.innerText = "กิจกรรม: " + title;
+            // ใช้รูป Custom ถ้ามี ถ้าไม่มีใช้ Placeholder
+            if (customUrl) {
+                 modalImage.src = customUrl;
+            } else {
+                 modalImage.src = `https://placehold.co/600x400/059669/ffffff?text=${encodeURIComponent(title)}`;
+            }
+            
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('show');
+        }
     </script>
 </body>
 </html>
